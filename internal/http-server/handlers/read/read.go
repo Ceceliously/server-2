@@ -5,85 +5,46 @@ import (
 	"net/http"
 	"errors"
 	"server-2/internal/storage"
+	res "server-2/internal/lib/user/response"
 
 	"github.com/go-chi/render"
-	"github.com/go-playground/validator/v10"
+
 )
 
-type Request struct {
-	Username string `json:"username" validate:"required"`
-	Password string `json:"password" validate:"required"`
-}
 
-type Resp struct {
-    Status string `json:"status"`
-    Error  string `json:"error,omitempty"`
-}
 
 type Response struct {
-	Resp
-	Username string `json:"username"`
-	FirstName string `json:"first_name"`
-	LastName string `json:"last_name"`
-	Age int `json:"age"`
+	res.Response
+	res.User
 }
 
-const (
-	StatusOk = "OK"
-	StatusError = "Error"
-)
 
-func OK() Resp {
-	return Resp{
-		Status: StatusOk,
-	} 
-}
-
-func Error(msg string) Resp {
-	return Resp{
-		Status: StatusError,
-		Error: msg,
-	}
-}
 
 
 func GetUser(s storage.UserStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const fn = "handler.read"
 
-		username, password, ok := r.BasicAuth()
-      if !ok {
-          w.WriteHeader(http.StatusBadRequest)
-		  render.JSON(w,r,Error("auth required"))
-          return
-      }
+		username, _, _ := r.BasicAuth()
 
-		req := Request {
-			Username: username,
-			Password: password,
-		}
 
-	if err := validator.New().Struct(req); err != nil {
-		log.Printf("invalid request : %w", err)
-		render.JSON(w, r, Error("invalid request"))
-		return
-	}
-
-	firstName, lastName, age, err := s.GetUser(username, password)
+	firstName, lastName, age, err := s.GetUser(username)
 	if errors.Is(err, storage.ErrUserNotFound) {
 		log.Printf("failed to find user : %w", err)
-		render.JSON(w, r, Error("failed to find user"))
+		render.JSON(w, r, res.Error("failed to find user"))
 		return
 	}
 	if err != nil {
 			log.Printf("%s: failed to find user", fn)
-			render.JSON(w, r, Error("failed to find user"))
+			render.JSON(w, r, res.Error("failed to find user"))
 			return
 		}
 
 		resp := Response {
-		Resp: OK(),
-		Username: username,
+		Response: res.OK(),
+		User: res.User {
+			Username: username,
+		},
 	}
 
 	if firstName != nil {
@@ -98,7 +59,7 @@ func GetUser(s storage.UserStorage) http.HandlerFunc {
 		resp.Age = *age
 	}
 
-	log.Printf("user %s is found", req.Username)
+	log.Printf("user %s is found", username)
 
 	render.JSON(w, r, resp)
 	}

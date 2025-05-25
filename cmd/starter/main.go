@@ -35,9 +35,9 @@ func main() {
 
 
 
-    router.Get("/read", read.GetUser(storage))
+    router.Get("/user", storage.BasicAuth(read.GetUser(storage)))
 
-	router.Post("/create", storage.BasicAuth(create.New(storage)))
+	router.Post("/user", create.New(storage))
 
 
 	log.Println("starting server on ", cfg.Address)

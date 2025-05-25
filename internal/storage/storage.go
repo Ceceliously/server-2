@@ -11,5 +11,5 @@ var (
 
 type UserStorage interface {
 	Create(username, password string, firstName, lastName *string, age *int) (error)
-	GetUser(username, password string) (*string, *string, *int, error)
+	GetUser(username string) (*string, *string, *int, error)
 }

@@ -1,17 +1,16 @@
 package sqlite
 
 import (
+	"context"
 	"database/sql"
-	"fmt"
-	"server-2/internal/storage"
-	"log"
-	"github.com/mattn/go-sqlite3"
 	"errors"
+	"fmt"
+	"log"
 	"net/http"
+	"server-2/internal/storage"
 
-	"crypto/sha256"
-    "crypto/subtle"
-	"encoding/hex"
+	"github.com/mattn/go-sqlite3"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Storage struct {
@@ -51,6 +50,11 @@ func New(storagePath string) (*Storage, error) {
 func (s *Storage) Create(username, password string, firstName, lastName *string, age *int) (error) {
 	const fn = "storage.sqlite.CreateUser"
 
+	hashedPassword, err := hashPass(password)
+	if err != nil {
+		return fmt.Errorf("failed to hash pass: %w", err)
+	}
+
 	stmt, err := s.db.Prepare("INSERT INTO users(username, password, first_name, last_name, age) VALUES(?, ?, ?, ?, ?)")
 	if err != nil {
 		return fmt.Errorf("%s, %w", fn, err)
@@ -72,7 +76,7 @@ func (s *Storage) Create(username, password string, firstName, lastName *string,
 	}
 
 
-	res, err := stmt.Exec(username, password, fnVal, lnVal, aVal)
+	res, err := stmt.Exec(username, hashedPassword, fnVal, lnVal, aVal)
 	if err != nil {
 		if sqliteErr, ok := err.(sqlite3.Error); ok && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
 			return fmt.Errorf("%s, %w", fn, storage.ErrUserExists)
@@ -92,10 +96,10 @@ func (s *Storage) Create(username, password string, firstName, lastName *string,
 
 }
 
-func (s *Storage) GetUser(username, password string) (*string, *string, *int, error) {
+func (s *Storage) GetUser(username string) (*string, *string, *int, error) {
 	const fn = "storage.sqlite.GetUser"
 
-	stmt, err := s.db.Prepare("SELECT first_name, last_name, age FROM users WHERE username = ? AND password = ?")
+	stmt, err := s.db.Prepare("SELECT first_name, last_name, age FROM users WHERE username = ?")
 	if err != nil {
 		return  nil, nil, nil, fmt.Errorf("%s: prepare statement: %w", fn, err)
 	}
@@ -103,7 +107,7 @@ func (s *Storage) GetUser(username, password string) (*string, *string, *int, er
 	var firstName, lastName sql.NullString
 	var age sql.NullInt64
 
-	err = stmt.QueryRow(username, password).Scan(&firstName, &lastName, &age)
+	err = stmt.QueryRow(username).Scan(&firstName, &lastName, &age)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil, nil, storage.ErrUserNotFound
 	}
@@ -112,7 +116,7 @@ func (s *Storage) GetUser(username, password string) (*string, *string, *int, er
 	}
 
 	var fnIf *string
-	if lastName.Valid {
+	if firstName.Valid {
 		fnIf = &firstName.String
 	}
 
@@ -130,35 +134,40 @@ func (s *Storage) GetUser(username, password string) (*string, *string, *int, er
 	return fnIf, lnIf, aIf, nil
 }
 
-func (s *Storage) BasicAuth(next http.HandlerFunc) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		username, password, ok := r.BasicAuth()
-		if !ok {
-			w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
 
-		var dbPassword string
-		err := s.db.QueryRow("SELECT password FROM users WHERE username = ?", username).Scan(&dbPassword)
-		if err != nil || !checkPassword(password, dbPassword) {
-			w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-		
-				next.ServeHTTP(w, r)
-		
-	})
-} 
-
-func checkPassword(inPassword, dbPassword string) bool {
-	inHash := sha256.Sum256([]byte(inPassword))
-	decodeDBHash, err := hex.DecodeString(dbPassword)
-	if err != nil {
-		return false
-	}
-	return subtle.ConstantTimeCompare(inHash[:], decodeDBHash[:]) == 1
+func hashPass(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	return string(bytes), err
 }
 
-// func (s *Storage) DeleteURL(alias string) error {}
+
+func (s *Storage) BasicAuth(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		username, password, ok := r.BasicAuth()
+		if !ok {
+			w.Header().Set("WWW-Authenticate", `Basic realm="restricted"`)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		var hashedPassword string
+		err := s.db.QueryRow("SELECT password FROM users WHERE username = ?", username).Scan(&hashedPassword)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			} else {
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			}
+			return
+		}
+		
+		if err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password)); err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+				ctx := context.WithValue(r.Context(), "username", username)
+				next.ServeHTTP(w, r.WithContext(ctx))
+		
+	}
+} 
+
