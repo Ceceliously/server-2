@@ -2,13 +2,14 @@ package main
 
 import (
 	"log"
-	"os"
 	"net/http"
-	
+	"os"
+
 	"server-2/internal/config"
-	"server-2/internal/storage/sqlite"
 	"server-2/internal/http-server/handlers/create"
 	"server-2/internal/http-server/handlers/read"
+	"server-2/internal/storage/sqlite"
+	"server-2/server/service/usecase/user"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -24,7 +25,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	_=storage
+	userUC := user.NewUserUseCase(storage)
 
 	router := chi.NewRouter()
 
@@ -35,9 +36,9 @@ func main() {
 
 
 
-    router.Get("/user", storage.BasicAuth(read.GetUser(storage)))
+    router.Get("/user", storage.BasicAuth(read.GetUserHandler(userUC)))
 
-	router.Post("/user", create.New(storage))
+	router.Post("/user", create.CreateUserHandler(userUC))
 
 
 	log.Println("starting server on ", cfg.Address)

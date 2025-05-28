@@ -1,6 +1,9 @@
 package storage
 
-import "errors"
+import (
+	"errors"
+	entity "server-2/server/service/handlers/user"
+)
 
 var (
 	ErrUserNotFound = errors.New("user not found")
@@ -10,6 +13,6 @@ var (
 
 
 type UserStorage interface {
-	Create(username, password string, firstName, lastName *string, age *int) (error)
-	GetUser(username string) (*string, *string, *int, error)
+	Create(user *entity.User) (error)
+	GetUser(username string) (*entity.User, error)
 }

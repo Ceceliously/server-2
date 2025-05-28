@@ -6,6 +6,8 @@ import (
 	"errors"
 	"server-2/internal/storage"
 	res "server-2/internal/lib/user/response"
+	serv "server-2/internal/lib/user/models/user_get"
+	"server-2/server/service/usecase/user"
 
 	"github.com/go-chi/render"
 
@@ -13,22 +15,13 @@ import (
 
 
 
-type Response struct {
-	res.Response
-	res.User
-}
-
-
-
-
-func GetUser(s storage.UserStorage) http.HandlerFunc {
+func GetUserHandler(uc *user.UserUseCase) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const fn = "handler.read"
 
 		username, _, _ := r.BasicAuth()
 
-
-	firstName, lastName, age, err := s.GetUser(username)
+	ObtainedUser, err := uc.GetUser(username)
 	if errors.Is(err, storage.ErrUserNotFound) {
 		log.Printf("failed to find user : %w", err)
 		render.JSON(w, r, res.Error("failed to find user"))
@@ -40,27 +33,8 @@ func GetUser(s storage.UserStorage) http.HandlerFunc {
 			return
 		}
 
-		resp := Response {
-		Response: res.OK(),
-		User: res.User {
-			Username: username,
-		},
-	}
-
-	if firstName != nil {
-		resp.FirstName = *firstName
-	}
-
-	if lastName != nil {
-		resp.LastName = *lastName
-	}
-
-	if age != nil {
-		resp.Age = *age
-	}
-
 	log.Printf("user %s is found", username)
 
-	render.JSON(w, r, resp)
+	render.JSON(w, r, serv.ToResponse(ObtainedUser))
 	}
 }

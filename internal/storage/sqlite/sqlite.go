@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"server-2/internal/storage"
+	entity "server-2/server/service/handlers/user"
 
 	"github.com/mattn/go-sqlite3"
 	"golang.org/x/crypto/bcrypt"
@@ -47,13 +48,8 @@ func New(storagePath string) (*Storage, error) {
 	return &Storage{db : db}, nil
 }
 
-func (s *Storage) Create(username, password string, firstName, lastName *string, age *int) (error) {
+func (s *Storage) Create(user *entity.User) (error) {
 	const fn = "storage.sqlite.CreateUser"
-
-	hashedPassword, err := hashPass(password)
-	if err != nil {
-		return fmt.Errorf("failed to hash pass: %w", err)
-	}
 
 	stmt, err := s.db.Prepare("INSERT INTO users(username, password, first_name, last_name, age) VALUES(?, ?, ?, ?, ?)")
 	if err != nil {
@@ -63,20 +59,20 @@ func (s *Storage) Create(username, password string, firstName, lastName *string,
 	var fnVal, lnVal interface{} = nil, nil
 	var aVal interface{} = nil
 
-	if firstName != nil {
-		fnVal = *firstName
+	if user.FirstName != nil {
+		fnVal = *user.FirstName
 	}
 
-	if lastName != nil {
-		lnVal = *lastName
+	if user.LastName != nil {
+		lnVal = *user.LastName
 	}
 
-	if age != nil {
-		aVal = *age
+	if user.Age != nil {
+		aVal = *user.Age
 	}
 
 
-	res, err := stmt.Exec(username, hashedPassword, fnVal, lnVal, aVal)
+	res, err := stmt.Exec(user.Username, user.Password, fnVal, lnVal, aVal)
 	if err != nil {
 		if sqliteErr, ok := err.(sqlite3.Error); ok && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
 			return fmt.Errorf("%s, %w", fn, storage.ErrUserExists)
@@ -90,18 +86,18 @@ func (s *Storage) Create(username, password string, firstName, lastName *string,
 		return fmt.Errorf("%s: failed to get last insert id: %w", fn, err)
 	}
 
-	log.Printf("User %s with id %v is created", username, id)
+	log.Printf("User %s with id %v is created", user.Username, id)
 
 	return nil
 
 }
 
-func (s *Storage) GetUser(username string) (*string, *string, *int, error) {
+func (s *Storage) GetUser(username string) (*entity.User, error) {
 	const fn = "storage.sqlite.GetUser"
 
 	stmt, err := s.db.Prepare("SELECT first_name, last_name, age FROM users WHERE username = ?")
 	if err != nil {
-		return  nil, nil, nil, fmt.Errorf("%s: prepare statement: %w", fn, err)
+		return  nil, fmt.Errorf("%s: prepare statement: %w", fn, err)
 	}
 
 	var firstName, lastName sql.NullString
@@ -109,10 +105,10 @@ func (s *Storage) GetUser(username string) (*string, *string, *int, error) {
 
 	err = stmt.QueryRow(username).Scan(&firstName, &lastName, &age)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, nil, nil, storage.ErrUserNotFound
+		return nil, storage.ErrUserNotFound
 	}
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("%s: execute statement: %w", fn, err)
+		return nil, fmt.Errorf("%s: execute statement: %w", fn, err)
 	}
 
 	var fnIf *string
@@ -131,14 +127,16 @@ func (s *Storage) GetUser(username string) (*string, *string, *int, error) {
 		aIf = &a
 	}
 
-	return fnIf, lnIf, aIf, nil
+	return &entity.User{
+		Username: username,
+		Password: "",
+		FirstName: fnIf,
+		LastName: lnIf,
+		Age: aIf,
+	}, nil
 }
 
 
-func hashPass(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	return string(bytes), err
-}
 
 
 func (s *Storage) BasicAuth(next http.HandlerFunc) http.HandlerFunc {
