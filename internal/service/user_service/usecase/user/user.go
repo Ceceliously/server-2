@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"server-2/internal/storage"
-	serv "server-2/internal/lib/user/models/user_create"
+	serv "server-2/internal/models/user/user_create"
 	"golang.org/x/crypto/bcrypt"
-	entity "server-2/server/service/handlers/user"
+	entity "server-2/internal/models/user/user"
 )
 
 

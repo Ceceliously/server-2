@@ -2,7 +2,7 @@ package storage
 
 import (
 	"errors"
-	entity "server-2/server/service/handlers/user"
+	entity "server-2/internal/models/user/user"
 )
 
 var (
@@ -15,4 +15,5 @@ var (
 type UserStorage interface {
 	Create(user *entity.User) (error)
 	GetUser(username string) (*entity.User, error)
+	GetPasswordHash(username string) (string, error)
 }

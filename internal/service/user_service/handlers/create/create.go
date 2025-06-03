@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"errors"
 	"server-2/internal/storage"
-	res "server-2/internal/lib/user/response"
-	serv "server-2/internal/lib/user/models/user_create"
-	"server-2/server/service/usecase/user"
+	res "server-2/internal/models/response"
+	serv "server-2/internal/models/user/user_create"
+	"server-2/internal/service/user_service/usecase/user"
 
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator/v10"

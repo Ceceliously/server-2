@@ -1,8 +1,8 @@
 package userget
 
 import (
-	res "server-2/internal/lib/user/response"
-	entity "server-2/server/service/handlers/user"
+	res "server-2/internal/models/response"
+	entity "server-2/internal/models/user/user"
 )
 
 

@@ -1,7 +1,7 @@
 package createuser
 
 import (
-	res "server-2/internal/lib/user/response"
+	res "server-2/internal/models/response"
 )
 
 type UserCreateRequest struct {
