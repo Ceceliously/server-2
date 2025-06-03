@@ -9,7 +9,7 @@ import (
 	"server-2/internal/service/user_service/handlers/create"
 	"server-2/internal/service/user_service/handlers/read"
 	"server-2/internal/storage/sqlite"
-	"server-2/server/service/middleware/auth"
+	"server-2/internal/middleware/auth"
 	"server-2/internal/service/user_service/usecase/user"
 
 	"github.com/go-chi/chi/v5"
