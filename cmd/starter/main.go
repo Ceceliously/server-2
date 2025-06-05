@@ -6,11 +6,12 @@ import (
 	"os"
 
 	"server-2/internal/config"
-	"server-2/internal/service/user_service/handlers/create"
-	"server-2/internal/service/user_service/handlers/read"
-	"server-2/internal/storage/sqlite"
 	"server-2/internal/middleware/auth"
-	"server-2/internal/service/user_service/usecase/user"
+	"server-2/internal/service/user_service"
+	// "server-2/internal/service/user_service/handlers/create"
+	// "server-2/internal/service/user_service/handlers/read"
+	// "server-2/internal/service/user_service/usecase/user"
+	"server-2/internal/storage/sqlite"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -26,8 +27,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	userUC := user.NewUserUseCase(storage)
-	
+
+	userService := user_service.NewUserService(storage)
 	basicAuth := auth.NewBasicAuth(storage)
 
 	router := chi.NewRouter()
@@ -39,9 +40,10 @@ func main() {
 
 
 
-    router.Get("/user", basicAuth.BasicAuth(read.GetUserHandler(userUC)))
+	router.Post("/user", userService.HandlersV1.CreateUserHandler)
+	router.Get("/user", basicAuth.BasicAuth(userService.HandlersV1.GetUserHandler))
 
-	router.Post("/user", create.CreateUserHandler(userUC))
+	
 
 
 
