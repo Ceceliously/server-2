@@ -8,9 +8,6 @@ import (
 	"server-2/internal/config"
 	"server-2/internal/middleware/auth"
 	"server-2/internal/service/user_service"
-	// "server-2/internal/service/user_service/handlers/create"
-	// "server-2/internal/service/user_service/handlers/read"
-	// "server-2/internal/service/user_service/usecase/user"
 	"server-2/internal/storage/sqlite"
 
 	"github.com/go-chi/chi/v5"

@@ -2,6 +2,7 @@ package user
 
 import (
 	"fmt"
+	"errors"
 
 	"server-2/internal/storage"
 	serv "server-2/internal/models/user/user_create"
@@ -32,11 +33,22 @@ func (uc *UserUseCase) CreateUser(req serv.UserCreateRequest) error {
 		Age: req.Age,
 	}
 
-	return uc.storage.Create(user)
+	err = uc.storage.Create(user)
+		if errors.Is(err, storage.ErrUserExists) {
+			return storage.ErrUserExists
+		}
+		return err
 }
 
 func (uc *UserUseCase)GetUser(username string) (*entity.User, error) {
-	return uc.storage.GetUser(username)
+	msg, err :=  uc.storage.GetUser(username)
+	if errors.Is(err, storage.ErrUserNotFound) {
+		return nil, storage.ErrUserNotFound
+	}
+	if err != nil {
+			return nil, err
+		}
+	return msg, nil
 }
 
 

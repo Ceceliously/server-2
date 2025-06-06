@@ -150,34 +150,3 @@ func (s *Storage) GetPasswordHash(username string) (string, error) {
 }
 
 
-
-// func (s *Storage) BasicAuth(next http.HandlerFunc) http.HandlerFunc {
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		username, password, ok := r.BasicAuth()
-// 		if !ok {
-// 			w.Header().Set("WWW-Authenticate", `Basic realm="restricted"`)
-// 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-// 			return
-// 		}
-
-// 		var hashedPassword string
-// 		err := s.db.QueryRow("SELECT password FROM users WHERE username = ?", username).Scan(&hashedPassword)
-// 		if err != nil {
-// 			if err == sql.ErrNoRows {
-// 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
-// 			} else {
-// 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-// 			}
-// 			return
-// 		}
-		
-// 		if err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password)); err != nil {
-// 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-// 			return
-// 		}
-// 				ctx := context.WithValue(r.Context(), "username", username)
-// 				next.ServeHTTP(w, r.WithContext(ctx))
-		
-// 	}
-// } 
-

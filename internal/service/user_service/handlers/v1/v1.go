@@ -2,10 +2,8 @@ package v1
 
 import (
 	"net/http"
-	"errors"
 	"log"
 	"github.com/go-chi/render"
-	"server-2/internal/storage"
 	"server-2/internal/service/user_service/usecase/user"
 	usc "server-2/internal/models/user/user_create"
 	ug "server-2/internal/models/user/user_get"
@@ -39,21 +37,19 @@ func (h *UserHandlersV1) CreateUserHandler(w http.ResponseWriter, r *http.Reques
 
 
 		err = h.uc.CreateUser(req)
-		if errors.Is(err, storage.ErrUserExists) {
-			render.JSON(w, r, res.Error("user already exists"))
-			return
-		}
 		if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				render.JSON(w, r, res.Error("failed to add user"))
-				return
-			}
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			render.JSON(w, r, res.Error("failed to add user"))
+		}
 
 	log.Printf("user %s is added", req.Username)
 
 	render.JSON(w, r, usc.ToResponse(req.Username))
-
 	}
+
+
+
+	
 
 	func (h *UserHandlersV1) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 
@@ -64,14 +60,11 @@ func (h *UserHandlersV1) CreateUserHandler(w http.ResponseWriter, r *http.Reques
 		}
 
 	ObtainedUser, err := h.uc.GetUser(username)
-	if errors.Is(err, storage.ErrUserNotFound) {
-		render.JSON(w, r, res.Error("failed to find user"))
-		return
-	}
-	if err != nil {
+		if err != nil {
 			render.JSON(w, r, res.Error("failed to find user"))
 			return
 		}
+
 
 	log.Printf("user %s is found", username)
 
