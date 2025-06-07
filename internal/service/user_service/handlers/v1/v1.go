@@ -6,7 +6,6 @@ import (
 	"github.com/go-chi/render"
 	"server-2/internal/service/user_service/usecase/user"
 	u "server-2/internal/models/user"
-	// ug "server-2/internal/models/user/user_get"
 	res "server-2/internal/models/response"
 	"github.com/go-playground/validator/v10"
 )
@@ -25,21 +24,23 @@ func (h *UserHandlersV1) CreateUserHandler(w http.ResponseWriter, r *http.Reques
 
 		err := render.DecodeJSON(r.Body, &req)
 		if err != nil {
-			http.Error(w, "Invalid request", http.StatusBadRequest)
+			render.Status(r, http.StatusBadRequest)
 			render.JSON(w, r, res.Error("failed to decode request"))
 			return
 		}
 
 		if err := validator.New().Struct(req); err != nil {
-			render.JSON(w, r, res.Error("invalid request"))
+			render.Status(r, http.StatusBadRequest)
+			render.JSON(w, r, res.Error("invalid request fields"))
 			return
 		}
 
 
 		err = h.uc.CreateUser(req)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			render.Status(r, http.StatusInternalServerError)
 			render.JSON(w, r, res.Error("failed to add user"))
+			return
 		}
 
 	log.Printf("user %s is added", req.Username)
@@ -55,12 +56,14 @@ func (h *UserHandlersV1) CreateUserHandler(w http.ResponseWriter, r *http.Reques
 
 	username, ok := r.Context().Value("username").(string)
 		if !ok {
+			render.Status(r, http.StatusInternalServerError)
 			render.JSON(w, r, res.Error("internal server error"))
 			return
 		}
 
 	ObtainedUser, err := h.uc.GetUser(username)
 		if err != nil {
+			render.Status(r, http.StatusNotFound)
 			render.JSON(w, r, res.Error("failed to find user"))
 			return
 		}
