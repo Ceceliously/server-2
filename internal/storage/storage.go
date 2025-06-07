@@ -2,7 +2,7 @@ package storage
 
 import (
 	"errors"
-	entity "server-2/internal/models/user/user"
+	entity "server-2/internal/models/user"
 )
 
 var (

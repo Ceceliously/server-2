@@ -1,8 +1,8 @@
-package userget
+package user
 
 import (
 	res "server-2/internal/models/response"
-	entity "server-2/internal/models/user/user"
+	// entity "server-2/internal/models/user/user"
 )
 
 
@@ -14,7 +14,7 @@ type UserGetResponse struct {
 	Age int `json:"age"`
 }
 
-func ToResponse(obtU *entity.User) *UserGetResponse {
+func ToResponseUGet(obtU *User) *UserGetResponse {
 	resp := UserGetResponse {
 		Response: res.OK(),
 		Username: obtU.Username,
@@ -34,6 +34,3 @@ func ToResponse(obtU *entity.User) *UserGetResponse {
 
 	return &resp
 }
-
-
-	

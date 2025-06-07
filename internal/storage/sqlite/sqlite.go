@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 	"server-2/internal/storage"
-	entity "server-2/internal/models/user/user"
+	entity "server-2/internal/models/user"
 
 	"github.com/mattn/go-sqlite3"
 )

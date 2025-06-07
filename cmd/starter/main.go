@@ -40,9 +40,6 @@ func main() {
 	router.Post("/user", userService.HandlersV1.CreateUserHandler)
 	router.Get("/user", basicAuth.BasicAuth(userService.HandlersV1.GetUserHandler))
 
-	
-
-
 
 	log.Println("starting server on ", cfg.Address)
 

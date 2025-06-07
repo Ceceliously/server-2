@@ -1,4 +1,4 @@
-package createuser
+package user
 
 import (
 	res "server-2/internal/models/response"
@@ -17,7 +17,7 @@ type UserCreateResponse struct {
 	Username string `json:"username,omitempty"`
 }
 
-func ToResponse(username string) *UserCreateResponse {
+func ToResponseUCreate(username string) *UserCreateResponse {
 	return &UserCreateResponse {
 		Response: res.OK(),
 		Username: username,

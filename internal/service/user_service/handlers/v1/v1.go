@@ -5,8 +5,8 @@ import (
 	"log"
 	"github.com/go-chi/render"
 	"server-2/internal/service/user_service/usecase/user"
-	usc "server-2/internal/models/user/user_create"
-	ug "server-2/internal/models/user/user_get"
+	u "server-2/internal/models/user"
+	// ug "server-2/internal/models/user/user_get"
 	res "server-2/internal/models/response"
 	"github.com/go-playground/validator/v10"
 )
@@ -21,7 +21,7 @@ func NewHandlerV1(uc *user.UserUseCase) *UserHandlersV1 {
 
 
 func (h *UserHandlersV1) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
-		var req usc.UserCreateRequest
+		var req u.UserCreateRequest
 
 		err := render.DecodeJSON(r.Body, &req)
 		if err != nil {
@@ -44,7 +44,7 @@ func (h *UserHandlersV1) CreateUserHandler(w http.ResponseWriter, r *http.Reques
 
 	log.Printf("user %s is added", req.Username)
 
-	render.JSON(w, r, usc.ToResponse(req.Username))
+	render.JSON(w, r, u.ToResponseUCreate(req.Username))
 	}
 
 
@@ -68,5 +68,5 @@ func (h *UserHandlersV1) CreateUserHandler(w http.ResponseWriter, r *http.Reques
 
 	log.Printf("user %s is found", username)
 
-	render.JSON(w, r, ug.ToResponse(ObtainedUser))
+	render.JSON(w, r, u.ToResponseUGet(ObtainedUser))
 	}
